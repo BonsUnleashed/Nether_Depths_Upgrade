@@ -27,6 +27,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
@@ -39,6 +40,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = NetherDepthsUpgrade.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeEvents {
@@ -55,8 +57,12 @@ public class ForgeEvents {
             d0 = 0.01;
         }
 
-        if (EnchantmentHelper.getEnchantments(event.player.getItemBySlot(EquipmentSlot.FEET)).containsKey(NDUEnchantments.HELL_STRIDER.get())) {
-            double level = EnchantmentHelper.getEnchantments(event.player.getItemBySlot(EquipmentSlot.FEET)).get(NDUEnchantments.HELL_STRIDER.get());
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(event.player.getItemBySlot(EquipmentSlot.FEET));
+        if (enchantments.containsKey(NDUEnchantments.HELL_STRIDER.get())) {
+            if (!isOrdinaryPlayer(event.player)) {
+                enchantments = EnchantmentHelper.getEnchantments(event.player.getItemBySlot(EquipmentSlot.FEET));
+            }
+            double level = enchantments.get(NDUEnchantments.HELL_STRIDER.get());
             Player player = event.player;
             BlockPos eyePos = new BlockPos((int) player.getEyePosition().x(), (int) player.getEyePosition().y(), (int) player.getEyePosition().z());
             FluidState state = player.level().getFluidState(eyePos);
@@ -76,6 +82,14 @@ public class ForgeEvents {
                 }
             }
         }
+    }
+
+    // Modded player subclasses may return different equipment on each read, so only the vanilla player classes reuse the first enchantment map.
+    private static boolean isOrdinaryPlayer(Player player) {
+        String name = player.getClass().getName();
+        return name.equals("net.minecraft.server.level.ServerPlayer")
+                || name.equals("net.minecraft.client.player.LocalPlayer")
+                || name.equals("net.minecraft.client.player.RemotePlayer");
     }
 
     @SubscribeEvent
